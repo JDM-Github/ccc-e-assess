@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/resources/icon.png" />
+    <title>E-ASSESS | Loading</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        :root {
+            --color-bg: #0A0C12;
+            --color-surface: #0F1219;
+            --color-surface2: #141720;
+            --color-surface3: #1A1E2A;
+            --color-border: #1E2333;
+            --color-border2: #252B3B;
+            --color-text: #E2E8F8;
+            --color-text-muted: #5A6480;
+            --color-text-faint: #2E3448;
+            --color-accent: #3D6FFF;
+            --color-accent-dim: rgba(61, 111, 255, 0.10);
+            --color-accent-glow: rgba(61, 111, 255, 0.25);
+            --font-sans: 'DM Sans', system-ui, sans-serif;
+            --font-mono: 'DM Mono', monospace;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: var(--color-bg);
+            font-family: var(--font-sans);
+            color: var(--color-text);
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+
+        /* ── Card ── */
+        .card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+            padding: 40px 48px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 16px;
+            min-width: 320px;
+        }
+
+        /* ── Wordmark ── */
+        .wordmark {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .wordmark-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: var(--color-text);
+        }
+
+        .wordmark-title span {
+            color: var(--color-accent);
+        }
+
+        .wordmark-sub {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--color-text-faint);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        /* ── Spinner ── */
+        .spinner-wrap {
+            position: relative;
+            width: 48px;
+            height: 48px;
+        }
+
+        .spinner-track {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid var(--color-border2);
+        }
+
+        .spinner-arc {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: var(--color-accent);
+            border-right-color: var(--color-accent-glow);
+            animation: spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .spinner-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: var(--color-accent);
+            box-shadow: 0 0 8px var(--color-accent-glow);
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: translate(-50%, -50%) scale(0.75);
+            }
+        }
+
+        /* ── Status ── */
+        .status {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-label {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--color-text-muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .status-dots {
+            color: var(--color-accent);
+            letter-spacing: 0.2em;
+            min-width: 24px;
+            display: inline-block;
+            text-align: left;
+        }
+
+        /* ── Progress bar ── */
+        .progress-track {
+            width: 200px;
+            height: 2px;
+            background: var(--color-border2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--color-accent), var(--color-accent-glow));
+            border-radius: 2px;
+            animation: progress 12s cubic-bezier(0.1, 0, 0.3, 1) forwards;
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+            }
+
+            30% {
+                width: 45%;
+            }
+
+            60% {
+                width: 70%;
+            }
+
+            85% {
+                width: 88%;
+            }
+
+            100% {
+                width: 95%;
+            }
+        }
+
+        /* ── Footer ── */
+        .footer {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: var(--color-text-faint);
+            letter-spacing: 0.08em;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="wordmark">
+            <div class="wordmark-title"><span>E-ASSESS</span></div>
+            <div class="wordmark-sub">Image and PDF Assessment Pipeline</div>
+        </div>
+
+        <div class="spinner-wrap">
+            <div class="spinner-track"></div>
+            <div class="spinner-arc"></div>
+            <div class="spinner-dot"></div>
+        </div>
+
+        <div class="status">
+            <div class="status-label">Starting Backend<span id="dots" class="status-dots">.</span></div>
+            <div class="progress-track">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">v1.0.0 &nbsp;·&nbsp; E-ASSESS</div>
+
+    <script>
+        let n = 1;
+        setInterval(() => {
+            n = (n % 3) + 1;
+            document.getElementById('dots').textContent = '.'.repeat(n);
+        }, 500);
+    </script>
+</body>
+
+</html>
