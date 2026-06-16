@@ -32,13 +32,13 @@ class ImageProcessorService:
         return overlay
 
     @staticmethod
-    def _pipeline_enhance(img: Image.Image) -> Image.Image:
-        proc = ImageProcessorService._processor()
+    def _pipeline_enhance(img: Image.Image, proc: ImageProcessor = None) -> Image.Image:
+        proc = proc or ImageProcessorService._processor()
         return proc.enhance_for_detection(img)
 
     @staticmethod
-    def _pipeline_detect_corners(img: Image.Image, padding: int = 40) -> Image.Image:
-        proc = ImageProcessorService._processor()
+    def _pipeline_detect_corners(img: Image.Image, padding: int = 40, proc: ImageProcessor = None) -> Image.Image:
+        proc = proc or ImageProcessorService._processor()
         corners = proc.detect_document_corners(img, padding=padding)
         if corners is None:
             return img
@@ -53,8 +53,8 @@ class ImageProcessorService:
         return proc.deskew_by_corners(img, corners)
 
     @staticmethod
-    def _pipeline_detect_borders(img: Image.Image) -> dict:
-        proc = ImageProcessorService._processor()
+    def _pipeline_detect_borders(img: Image.Image, proc: ImageProcessor = None) -> dict:
+        proc = proc or ImageProcessorService._processor()
         img_array = np.array(img)
         gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -72,8 +72,9 @@ class ImageProcessorService:
         }
 
     @staticmethod
-    def _pipeline_detect_borders2(img: Image.Image, edge_margin: int = 50, min_span_ratio: float = 0.5) -> dict:
-        proc = ImageProcessorService._processor()
+    def _pipeline_detect_borders2(img: Image.Image, edge_margin: int = 50, min_span_ratio: float = 0.5,
+            proc: ImageProcessor = None) -> dict:
+        proc = proc or ImageProcessorService._processor()
         img_array = np.array(img)
         gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
         h, w = gray.shape
@@ -117,8 +118,8 @@ class ImageProcessorService:
         }
 
     @staticmethod
-    def _pipeline_crop(img: Image.Image, borders: dict) -> Image.Image:
-        proc = ImageProcessorService._processor()
+    def _pipeline_crop(img: Image.Image, borders: dict, proc: ImageProcessor = None) -> Image.Image:
+        proc = proc or ImageProcessorService._processor()
         arr  = np.array(img)
         h, w = arr.shape[:2]
         left   = max(0, borders["left"]   + 5)
@@ -136,15 +137,17 @@ class ImageProcessorService:
         output_width  = cfg["OUTPUT_WIDTH"]
         output_height = cfg["OUTPUT_HEIGHT"]
 
+        proc = ImageProcessorService._processor()
+
         img = _bytes_to_pil(image_bytes)
-        img = ImageProcessorService._pipeline_enhance(img)
-        img = ImageProcessorService._pipeline_detect_corners(img)
+        img = ImageProcessorService._pipeline_enhance(img, proc)
+        img = ImageProcessorService._pipeline_detect_corners(img, proc=proc)
 
-        borders = ImageProcessorService._pipeline_detect_borders(img)
-        img     = ImageProcessorService._pipeline_crop(img, borders)
+        borders = ImageProcessorService._pipeline_detect_borders(img, proc)
+        img     = ImageProcessorService._pipeline_crop(img, borders, proc)
 
-        borders = ImageProcessorService._pipeline_detect_borders2(img)
-        img     = ImageProcessorService._pipeline_crop(img, borders)
+        borders = ImageProcessorService._pipeline_detect_borders2(img, proc=proc)
+        img     = ImageProcessorService._pipeline_crop(img, borders, proc)
 
         img = img.resize((output_width, output_height), Image.LANCZOS)
 
@@ -166,17 +169,20 @@ class ImageProcessorService:
         output_width  = cfg["OUTPUT_WIDTH"]
         output_height = cfg["OUTPUT_HEIGHT"]
 
+        proc = ImageProcessorService._processor()
+
         img = _bytes_to_pil(image_bytes)
-        img = ImageProcessorService._pipeline_enhance(img)
-        img = ImageProcessorService._pipeline_detect_corners(img)
+        img = ImageProcessorService._pipeline_enhance(img, proc)
+        img = ImageProcessorService._pipeline_detect_corners(img, proc=proc)
 
-        borders = ImageProcessorService._pipeline_detect_borders(img)
-        img     = ImageProcessorService._pipeline_crop(img, borders)
+        borders = ImageProcessorService._pipeline_detect_borders(img, proc)
+        img     = ImageProcessorService._pipeline_crop(img, borders, proc)
 
-        borders = ImageProcessorService._pipeline_detect_borders2(img)
-        img     = ImageProcessorService._pipeline_crop(img, borders)
+        borders = ImageProcessorService._pipeline_detect_borders2(img, proc=proc)
+        img     = ImageProcessorService._pipeline_crop(img, borders, proc)
 
         img = img.resize((output_width, output_height), Image.LANCZOS)
+        img_array = np.array(img)
 
         buf = BytesIO()
         img.save(buf, format="PNG")
@@ -184,9 +190,11 @@ class ImageProcessorService:
 
         box_config = BoxConfigService(app_name="E-Assess")
         BOXES = box_config.get_all_for_pipeline()
-        grid_result = OmrGridService.apply_grids(buf.getvalue(), BOXES, cfg)
+        grid_result = OmrGridService.apply_grids(img_array, BOXES, cfg)
 
         total_elapsed = round(time.time() - total_start, 4)
+
+        print(f"ELAAPPSEDDD {total_elapsed}")
         Printer.success(f"[pipeline] completed in {total_elapsed}s")
 
         return {

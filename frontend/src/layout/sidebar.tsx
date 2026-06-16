@@ -39,6 +39,13 @@ const IconSetup = () => (
 	</svg>
 );
 
+const IconExcel = () => (
+	<svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.5">
+		<path d="M3 2.5h9a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z" />
+		<path d="M5 5l5 5M10 5l-5 5" strokeLinecap="round" />
+	</svg>
+);
+
 // ── Nav config ─────────────────────────────────────────────────────────────────
 
 const NAV: NavSection[] = [
@@ -48,6 +55,7 @@ const NAV: NavSection[] = [
 			{ label: "Dashboard", path: "/", icon: <IconDashboard /> },
 			{ label: "Process", path: "/process", icon: <IconProcess /> },
 			{ label: "Setup", path: "/setup", icon: <IconSetup /> },
+			{ label: "Manage Excel", path: "/manage-excel", icon: <IconExcel /> },
 		],
 	},
 ];

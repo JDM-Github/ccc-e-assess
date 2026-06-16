@@ -3,12 +3,6 @@
         "link": "/api",
         "masterEnabled": true
     },
-    "example": {
-        "link": "/api/example",
-        "masterEnabled": true,
-        "disabledOnProduction": false,
-        "disabledOnDeployed": false
-    },
     "image_processor": {
         "link": "/api/image_processor",
         "masterEnabled": true,
@@ -17,6 +11,12 @@
     },
     "box_config": {
         "link": "/api/box_config",
+        "masterEnabled": true,
+        "disabledOnProduction": false,
+        "disabledOnDeployed": false
+    },
+    "excel_processor": {
+        "link": "/api/excel_processor",
         "masterEnabled": true,
         "disabledOnProduction": false,
         "disabledOnDeployed": false

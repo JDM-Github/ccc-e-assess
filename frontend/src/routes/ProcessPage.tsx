@@ -16,7 +16,6 @@ export default function ProcessorPage() {
 	const handleSnapshotImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const f = e.target.files?.[0];
 		if (!f) return;
-
 		try {
 			const reader = f.stream().pipeThrough(new TextDecoderStream()).getReader();
 
@@ -87,7 +86,7 @@ export default function ProcessorPage() {
 	}
 
 	return (
-		<div className="flex flex-col gap-4 w-full max-w-7xl mx-auto">
+		<div className="flex flex-col gap-4 w-full max-w-7xl">
 
 			{/* Ambient blobs */}
 			<div

@@ -1,4 +1,3 @@
-import base64
 from flask import Response, request
 from jdm_electron_flask import JDMBlueprint, success, error
 import json

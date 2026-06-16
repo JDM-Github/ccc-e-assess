@@ -12,6 +12,7 @@ import SetupPage from "./routes/SetupPage";
 import RequestHandler from "./lib/utilities/request_handler";
 import { APP_NAME } from "./lib/constant";
 import { Dashboard } from "./routes/Dashboard";
+import ExcelProcessorPage from "./routes/ExcelProcessor";
 
 const ROUTE_NAMES: Record<string, string> = {
 	"/": "Dashboard",
@@ -48,6 +49,7 @@ export default function App() {
 							<Route path="/" element={<Dashboard />} />
 							<Route path="/process" element={<ProcessorPage />} />
 							<Route path="/setup" element={<SetupPage />} />
+							<Route path="/manage-excel" element={<ExcelProcessorPage />} />
 						</Routes>
 					</motion.main>
 				</AnimatePresence>

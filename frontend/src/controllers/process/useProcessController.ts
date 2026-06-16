@@ -120,7 +120,7 @@ export function useProcessController() {
 
         const fd = new FormData();
         fd.append("file", file);
-        fd.append("max_workers", "10");
+        fd.append("max_workers", "4");
         
         fd.append("start_page", String(pageRange.start));
         if (pageRange.upto != null) fd.append("upto", String(pageRange.upto));
