@@ -88,7 +88,6 @@ export default function ProcessorPage() {
 	return (
 		<div className="flex flex-col gap-4 w-full max-w-7xl">
 
-			{/* Ambient blobs */}
 			<div
 				className="pointer-events-none fixed top-[-15%] left-[-8%] w-[480px] h-[480px] rounded-full opacity-[0.07] blur-[120px]"
 				style={{ background: "radial-gradient(circle at 30% 30%, #4F6EF7 0%, transparent 70%)" }}
