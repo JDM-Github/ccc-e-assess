@@ -16,7 +16,7 @@ class ExcelProcessorBlueprint(JDMBlueprint):
         super().__init__("excel_processor", __name__)
 
     # ── POST /generate ──────────────────────────────
-    @JDMBlueprint.post("/generate", auth=False, validate=None)
+    @JDMBlueprint.post("/generate", auth=False)
     def generate():
         applicant_file = request.files.get("applicant")
         answerer_file  = request.files.get("answerer")
@@ -55,14 +55,13 @@ class ExcelProcessorBlueprint(JDMBlueprint):
             }
         )
 
-    @JDMBlueprint.get("/download/<kind>", auth=False, validate=None)
+    @JDMBlueprint.get("/download/<kind>", auth=False)
     def download(kind):
         if kind not in _TEMPLATE_FILES:
             return error(f"Unknown template kind '{kind}'. Valid options: {list(_TEMPLATE_FILES.keys())}", 400)
 
         filename, download_name = _TEMPLATE_FILES[kind]
         filepath = os.path.normpath(os.path.join(_RESOURCES_DIR, filename))
-
         if not os.path.isfile(filepath):
             return error(f"Template file '{filename}' not found on server.", 404)
 
@@ -78,7 +77,7 @@ class ExcelProcessorBlueprint(JDMBlueprint):
             }
         )
 
-    @JDMBlueprint.post("/merge", auth=False, validate=None)
+    @JDMBlueprint.post("/merge", auth=False)
     def merge():
         files = []
         i = 0

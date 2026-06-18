@@ -4,14 +4,13 @@ const path = require('path');
 const net = require('net');
 
 let backendProcess = null;
-let mainWindow = null;
-let isQuitting = false;
+let mainWindow     = null;
+let isQuitting     = false;
 
 function getBackendExe() {
     const exeName = process.platform === "win32"
         ? `flask_server.exe`
         : 'flask_server';
-
     if (app.isPackaged) {
         return path.join(process.resourcesPath, "backend", "flask_server", exeName);
     }
@@ -29,7 +28,7 @@ function getFreePort() {
     });
 }
 
-function waitForPort(port, timeout = 15000) {
+function waitForPort(port, timeout = 60000) {
     return new Promise((resolve, reject) => {
         const start = Date.now();
         const tryConnect = () => {
@@ -87,7 +86,6 @@ function startBackend(port) {
         detached: process.platform !== 'win32',
         env: { ...process.env, FLASK_PORT: String(port) },
     });
-
     backendProcess.stdout.on('data', (d) => console.log('[Backend]', d.toString().trim()));
     backendProcess.stderr.on('data', (d) => console.error('[Backend ERR]', d.toString().trim()));
     backendProcess.on('exit', (code) => {
@@ -118,7 +116,6 @@ async function createWindow() {
     mainWindow.show();
 
     const port = await getFreePort();
-
     startBackend(port);
     try {
         await waitForPort(port);
@@ -139,10 +136,7 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
-
-// STARTING
 app.whenReady().then(createWindow);
-
 process.on('uncaughtException', (err) => {
     console.error('[Electron] Uncaught Exception:', err);
     killBackend();

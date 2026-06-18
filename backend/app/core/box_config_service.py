@@ -272,7 +272,6 @@ def get_app_data_dir(app_name: str = "E-Assess") -> Path:
     app_dir.mkdir(parents=True, exist_ok=True)
     return app_dir
 
-
 class BoxConfigError(Exception):
     """Raised for invalid box configs or CRUD errors (bad title, etc)."""
 
