@@ -168,7 +168,7 @@ function Toggle({
                 )}
             </div>
 
-            
+
             <div
                 style={{
                     position: "relative",
@@ -180,7 +180,7 @@ function Toggle({
                     transition: "background 0.15s",
                 }}
             >
-                
+
                 <motion.div
                     animate={{ x: checked ? 14 : 2 }}
                     transition={{ duration: 0.15, ease: EASE }}
@@ -307,7 +307,7 @@ export default function BoxEditorPanel({
                 position: "relative",
             }}
         >
-            
+
             <div
                 style={{
                     position: "relative",
@@ -322,7 +322,7 @@ export default function BoxEditorPanel({
                     gap: 8,
                 }}
             >
-                
+
                 <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                     <span
                         style={{
@@ -372,7 +372,7 @@ export default function BoxEditorPanel({
                         {box.title || "Untitled box"}
                     </span>
 
-                    
+
                     {box.is_answerer && (
                         <span
                             style={{
@@ -392,9 +392,35 @@ export default function BoxEditorPanel({
                             answerer
                         </span>
                     )}
+
+
+                    {box.combined_title && (
+                        <span
+                            style={{
+                                fontSize: 8,
+                                fontFamily: "var(--font-mono)",
+                                fontWeight: 700,
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                                color: "#7C3AED",
+                                background: "rgba(124,58,237,0.1)",
+                                border: "1px solid rgba(124,58,237,0.25)",
+                                borderRadius: 4,
+                                padding: "1px 6px",
+                                flexShrink: 0,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: 120,
+                            }}
+                            title={`Combined into "${box.combined_title}"`}
+                        >
+                            → {box.combined_title}
+                        </span>
+                    )}
                 </div>
 
-                
+
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                     <button
                         onClick={onDelete}
@@ -451,7 +477,7 @@ export default function BoxEditorPanel({
                 </div>
             </div>
 
-            
+
             <div
                 style={{
                     position: "relative",
@@ -463,7 +489,7 @@ export default function BoxEditorPanel({
                     overflowY: "auto",
                 }}
             >
-                
+
                 <SectionCard delay={0.04}>
                     <Label>Title</Label>
                     <input
@@ -493,7 +519,7 @@ export default function BoxEditorPanel({
                     />
                 </SectionCard>
 
-                
+
                 <SectionCard delay={0.08}>
                     <Label>Coordinates</Label>
                     <CoordPair
@@ -518,7 +544,7 @@ export default function BoxEditorPanel({
                         onChange={(v) => setField("height", v)}
                     />
 
-                    
+
                     <div
                         style={{
                             background: "var(--color-bg)",
@@ -569,7 +595,7 @@ export default function BoxEditorPanel({
                     </div>
                 </SectionCard>
 
-                
+
                 <SectionCard delay={0.12}>
                     <Label>Grid</Label>
                     <div
@@ -639,7 +665,7 @@ export default function BoxEditorPanel({
                     </div>
                 </SectionCard>
 
-                
+
                 <SectionCard delay={0.16}>
                     <Label>Check mode</Label>
                     <Toggle
@@ -657,7 +683,7 @@ export default function BoxEditorPanel({
                     />
                 </SectionCard>
 
-                
+
                 <SectionCard delay={0.2}>
                     <Label>Excel output</Label>
                     <Toggle
@@ -689,7 +715,7 @@ export default function BoxEditorPanel({
                     />
                 </SectionCard>
 
-                
+
                 <SectionCard delay={0.22}>
                     <Label>Group</Label>
                     <input
@@ -718,7 +744,40 @@ export default function BoxEditorPanel({
                     </span>
                 </SectionCard>
 
-                
+
+                <SectionCard delay={0.23}>
+                    <Label>Combined title</Label>
+                    <input
+                        type="text"
+                        value={box.combined_title ?? ""}
+                        onChange={(e) =>
+                            onChange({ ...box, combined_title: e.target.value || null })
+                        }
+                        placeholder="e.g. Date of Birth (or leave blank)"
+                        style={{
+                            background: "var(--color-bg)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: 7,
+                            fontFamily: "var(--font-mono)",
+                            fontSize: 11,
+                            color: "var(--color-text)",
+                            padding: "6px 8px",
+                            outline: "none",
+                            width: "100%",
+                            transition: "border-color 0.15s",
+                            boxSizing: "border-box",
+                        }}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-accent)")}
+                        onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
+                    />
+                    <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--color-text-faint)", opacity: 0.6 }}>
+                        Boxes sharing the same combined title are merged into one Excel
+                        cell (e.g. DOBMM + DOBDD + DOBYYYY → "Date of Birth"). Takes
+                        priority over Group. Leave blank to keep this box separate.
+                    </span>
+                </SectionCard>
+
+
                 <SectionCard delay={0.24}>
                     <Label>Answerer</Label>
                     <Toggle
@@ -729,7 +788,7 @@ export default function BoxEditorPanel({
                         accentColor="#10B981"
                     />
 
-                    
+
                     {box.is_answerer && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
@@ -772,7 +831,7 @@ export default function BoxEditorPanel({
                     )}
                 </SectionCard>
 
-                
+
                 <motion.button
                     onClick={onSave}
                     disabled={saving || !box.title.trim()}

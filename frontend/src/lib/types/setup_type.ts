@@ -13,6 +13,7 @@ export interface BoxCoord {
     no_double: boolean;
     no_blank: boolean;
     group: string | null;
+    combined_title: string | null;
     is_answerer: boolean;
 }
 

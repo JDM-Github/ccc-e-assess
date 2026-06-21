@@ -10,8 +10,7 @@ class ImageProcessorBlueprint(JDMBlueprint):
     @staticmethod
     def _get_image_bytes() -> bytes | None:
         f = request.files.get("file")
-        if not f:
-            return None
+        if not f: return None
         raw = f.read()
         filename = (f.filename or "").lower()
         is_pdf = filename.endswith(".pdf") or f.content_type == "application/pdf"
@@ -193,9 +192,21 @@ class ImageProcessorBlueprint(JDMBlueprint):
             WRONG_SCORE_FILL   = PatternFill("solid", fgColor="FFEBEE")
 
             def make_acronym(title: str) -> str:
-                """'Verbal Reasoning' → 'VR', 'Space Relations' → 'SR'"""
-                words = re.findall(r"[A-Za-z0-9]+", title)
-                return "".join(w[0].upper() for w in words) or title[:4]
+                """
+                'Verbal Reasoning' → 'VR'
+                'Space Relations'  → 'SR'
+                '2342'             → '2342'   (pure numeric, no change)
+                '234-234'          → '234-234' (no alpha words, no change)
+                """
+                alpha_words = re.findall(r"[A-Za-z]+", title)
+                # No alphabetic words at all → return title unchanged
+                if not alpha_words:
+                    return title
+                # All tokens are digits → return title unchanged
+                all_tokens = re.findall(r"[A-Za-z0-9]+", title)
+                if all(tok.isdigit() for tok in all_tokens):
+                    return title
+                return "".join(w[0].upper() for w in alpha_words) or title[:4]
 
             def ensure_unique_sheet_name(wb, name: str) -> str:
                 existing = {s.title for s in wb.worksheets}
@@ -265,12 +276,61 @@ class ImageProcessorBlueprint(JDMBlueprint):
                     if not bm.get("has_own_sheet", False)
                 ]
 
+                def resolve_single_box_value(bm: dict, ag: list) -> str:
+                    """Resolve one shared box's own grid into a single display
+                    string, honoring its own is_combined/check_by_col settings.
+                    Used both for standalone boxes and as a building block when
+                    several boxes are merged via combined_title."""
+                    cols_labels  = bm.get("columns", [])
+                    is_combined  = bm.get("is_combined", False)
+                    check_by_col = bm.get("check_by_col", False)
+
+                    if not is_combined:
+                        return ""
+
+                    n_rows = bm.get("grid_rows", len(ag))
+                    if check_by_col:
+                        checked = []
+                        for c, col_bools in enumerate(ag):
+                            for r, v in enumerate(col_bools):
+                                if v and r < len(cols_labels):
+                                    checked.append((c, cols_labels[r]))
+                        checked.sort(key=lambda x: x[0])
+                        return "".join(v for _, v in checked)
+
+                    value = ""
+                    for r in range(n_rows):
+                        row = ag[r] if r < len(ag) else []
+                        for c, v in enumerate(row):
+                            if v and c < len(cols_labels):
+                                value += cols_labels[c]
+                    return value
+
                 def get_prefix_values(shared_boxes) -> list[tuple[str, str]]:
                     result = []
+                    processed_combined_titles: set[str] = set()
                     processed_groups: set[str] = set()
 
                     for bm, ag in shared_boxes:
+                        combined_title = bm.get("combined_title")
                         group = bm.get("group")
+
+                        # combined_title takes priority: every box sharing the same
+                        # combined_title is merged into a single column, joined with "-"
+                        # so MM=06, DD=16, YYYY=2004 → "06-16-2004"
+                        if combined_title is not None:
+                            if combined_title in processed_combined_titles:
+                                continue
+                            processed_combined_titles.add(combined_title)
+
+                            parts = [
+                                resolve_single_box_value(cbm, cag)
+                                for cbm, cag in shared_boxes
+                                if cbm.get("combined_title") == combined_title
+                            ]
+                            merged_value = "-".join(parts)
+                            result.append((combined_title, merged_value))
+                            continue
 
                         if group is not None:
                             if group in processed_groups:
@@ -279,6 +339,8 @@ class ImageProcessorBlueprint(JDMBlueprint):
 
                             all_checked: list[str] = []
                             for gbm, gag in shared_boxes:
+                                if gbm.get("combined_title") is not None:
+                                    continue
                                 if gbm.get("group") != group:
                                     continue
                                 gcols = gbm.get("columns", [])
@@ -296,30 +358,7 @@ class ImageProcessorBlueprint(JDMBlueprint):
                             result.append((bm.get("title", group), ",".join(all_checked)))
 
                         else:
-                            cols_labels  = bm.get("columns", [])
-                            is_combined  = bm.get("is_combined", False)
-                            check_by_col = bm.get("check_by_col", False)
-
-                            if is_combined:
-                                n_rows = bm.get("grid_rows", len(ag))
-                                if check_by_col:
-                                    checked = []
-                                    for c, col_bools in enumerate(ag):
-                                        for r, v in enumerate(col_bools):
-                                            if v and r < len(cols_labels):
-                                                checked.append((c, cols_labels[r]))
-                                    checked.sort(key=lambda x: x[0])
-                                    value = "".join(v for _, v in checked)
-                                else:
-                                    value = ""
-                                    for r in range(n_rows):
-                                        row = ag[r] if r < len(ag) else []
-                                        for c, v in enumerate(row):
-                                            if v and c < len(cols_labels):
-                                                value += cols_labels[c]
-                                result.append((bm.get("title", ""), value))
-                            else:
-                                result.append((bm.get("title", ""), ""))
+                            result.append((bm.get("title", ""), resolve_single_box_value(bm, ag)))
 
                     return result
 
@@ -331,43 +370,86 @@ class ImageProcessorBlueprint(JDMBlueprint):
                     if bm.get("has_own_sheet", False)
                 ]
 
-                for _idx, bm, ag in own_boxes:
-                    full_title   = bm.get("title", f"Box_{_idx}")
-                    acronym      = make_acronym(full_title)
-                    cols_labels  = bm.get("columns", [])
-                    grid_rows    = bm.get("grid_rows", len(ag))
-                    is_combined  = bm.get("is_combined", False)
-                    check_by_col = bm.get("check_by_col", False)
-                    is_answerer  = bm.get("is_answerer", False)
-                    key_answers  = answer_quiz.get(full_title) if is_answerer else None
+                # ── Group own_boxes by their sheet key ────────────────────────
+                # Sheet key rules:
+                #   - has_own_sheet + combined_title → all boxes with the same
+                #     combined_title land on ONE sheet named after the
+                #     combined_title acronym, questions written sequentially,
+                #     single Correct/Wrong pair tallying all of them.
+                #   - has_own_sheet + no combined_title → one sheet per box
+                #     (original behaviour, keyed by the box title acronym).
+                #
+                # We build an ordered dict: sheet_key → list of (idx, bm, ag)
+                from collections import OrderedDict
+                own_sheet_groups: OrderedDict[str, list] = OrderedDict()
 
-                    # Use acronym as sheet key, guarantee uniqueness
-                    if acronym not in sheet_map:
-                        safe_name = ensure_unique_sheet_name(wb, acronym)
+                for _idx, bm, ag in own_boxes:
+                    ct = bm.get("combined_title")
+                    if ct:
+                        # sheet key = acronym of the combined_title
+                        skey = make_acronym(ct)
+                    else:
+                        # sheet key = acronym of the box's own title (original)
+                        skey = make_acronym(bm.get("title", f"Box_{_idx}"))
+
+                    if skey not in own_sheet_groups:
+                        own_sheet_groups[skey] = []
+                    own_sheet_groups[skey].append((_idx, bm, ag))
+
+                # ── Write one row per sheet-group per page ────────────────────
+                for skey, group_boxes in own_sheet_groups.items():
+
+                    # Collect metadata across all boxes in this group
+                    # is_answerer / key_answers: use first box that declares it
+                    group_is_answerer = any(bm.get("is_answerer", False) for _, bm, _ in group_boxes)
+
+                    # Build the merged key_answers list in box order
+                    group_key_answers: list[str | None] | None = [] if group_is_answerer else None
+                    if group_is_answerer:
+                        for _, bm, _ in group_boxes:
+                            full_title  = bm.get("title", "")
+                            box_keys    = answer_quiz.get(full_title) or []
+                            grid_rows_b = bm.get("grid_rows", 0)
+                            # pad / trim to grid_rows so offsets are correct
+                            for qi in range(grid_rows_b):
+                                group_key_answers.append(box_keys[qi] if qi < len(box_keys) else None)
+
+                    # ── Create sheet on first encounter ───────────────────────
+                    if skey not in sheet_map:
+                        safe_name = ensure_unique_sheet_name(wb, skey)
                         ws = wb.create_sheet(title=safe_name)
-                        sheet_map[acronym] = ws
+                        sheet_map[skey] = ws
 
                         col_cursor = 1
+
+                        # prefix columns
                         for ptitle, _ in prefix_values:
                             ws.cell(row=1, column=col_cursor, value=ptitle)
                             col_cursor += 1
-                        for q in range(1, grid_rows + 1):
-                            ws.cell(row=1, column=col_cursor, value=f"Q{q}")
-                            col_cursor += 1
 
-                        if is_answerer:
+                        # question columns — sequential across all boxes in group
+                        q_global = 1
+                        for _, bm, ag in group_boxes:
+                            grid_rows_b = bm.get("grid_rows", len(ag))
+                            for _ in range(grid_rows_b):
+                                ws.cell(row=1, column=col_cursor, value=f"Q{q_global}")
+                                col_cursor += 1
+                                q_global += 1
+
+                        # single Correct / Wrong pair for the whole group
+                        if group_is_answerer:
                             correct_col = col_cursor
                             wrong_col   = col_cursor + 1
                             ws.cell(row=1, column=correct_col, value="Correct")
                             ws.cell(row=1, column=wrong_col,   value="Wrong")
-                            score_cols[acronym] = (correct_col, wrong_col)
+                            score_cols[skey] = (correct_col, wrong_col)
                             col_cursor += 2
                         else:
-                            score_cols[acronym] = (None, None)
+                            score_cols[skey] = (None, None)
 
                         style_header_row(
                             ws, col_cursor - 1,
-                            score_start_col=score_cols[acronym][0]
+                            score_start_col=score_cols[skey][0]
                         )
 
                         # freeze top row + prefix columns
@@ -379,50 +461,69 @@ class ImageProcessorBlueprint(JDMBlueprint):
                             ws.column_dimensions[openpyxl.utils.get_column_letter(c)].width = 14
                         for c in range(len(prefix_values) + 1, col_cursor):
                             ws.column_dimensions[openpyxl.utils.get_column_letter(c)].width = 6
-                        if is_answerer:
+                        if group_is_answerer:
                             ws.column_dimensions[openpyxl.utils.get_column_letter(correct_col)].width = 9
                             ws.column_dimensions[openpyxl.utils.get_column_letter(wrong_col)].width = 9
 
-                        row_ptr[acronym] = 2
+                        row_ptr[skey] = 2
 
-                    ws         = sheet_map[acronym]
-                    write_row  = row_ptr[acronym]
+                    # ── Write one data row for this page ──────────────────────
+                    ws         = sheet_map[skey]
+                    write_row  = row_ptr[skey]
                     col_cursor = 1
                     correct_count = 0
                     wrong_count   = 0
+                    key_offset    = 0   # running index into group_key_answers
 
+                    # prefix values
                     for _, pval in prefix_values:
                         cell = ws.cell(row=write_row, column=col_cursor, value=pval)
                         cell.alignment = LEFT
                         cell.border    = THIN_BORDER
                         col_cursor += 1
 
-                    for q_idx in range(grid_rows):
-                        val, is_multiple = resolve_answer(ag, cols_labels, q_idx, is_combined, check_by_col)
-                        cell = ws.cell(row=write_row, column=col_cursor, value=val)
-                        cell.alignment = CENTER
-                        cell.border    = THIN_BORDER
+                    # answer cells — one box at a time, columns are sequential
+                    for _, bm, ag in group_boxes:
+                        cols_labels  = bm.get("columns", [])
+                        grid_rows_b  = bm.get("grid_rows", len(ag))
+                        is_combined  = bm.get("is_combined", False)
+                        check_by_col = bm.get("check_by_col", False)
 
-                        if is_answerer:
-                            key_answer = key_answers[q_idx] if key_answers and q_idx < len(key_answers) else None
-                            fill, font = get_answer_style(val, is_multiple, key_answer)
-                            if fill:
-                                cell.fill = fill
-                            if font:
-                                cell.font = font
+                        for q_idx in range(grid_rows_b):
+                            val, is_multiple = resolve_answer(
+                                ag, cols_labels, q_idx, is_combined, check_by_col
+                            )
+                            cell = ws.cell(row=write_row, column=col_cursor, value=val)
+                            cell.alignment = CENTER
+                            cell.border    = THIN_BORDER
 
-                            if not is_multiple and val and key_answer:
-                                if val == key_answer:
-                                    correct_count += 1
-                                else:
+                            if group_is_answerer:
+                                key_answer = (
+                                    group_key_answers[key_offset]
+                                    if group_key_answers and key_offset < len(group_key_answers)
+                                    else None
+                                )
+                                fill, font = get_answer_style(val, is_multiple, key_answer)
+                                if fill:
+                                    cell.fill = fill
+                                if font:
+                                    cell.font = font
+
+                                if not is_multiple and val and key_answer:
+                                    if val == key_answer:
+                                        correct_count += 1
+                                    else:
+                                        wrong_count += 1
+                                elif not val:
                                     wrong_count += 1
-                            elif not val:
-                                wrong_count += 1
-                            elif is_multiple:
-                                wrong_count += 1
-                        col_cursor += 1
+                                elif is_multiple:
+                                    wrong_count += 1
 
-                    c_col, w_col = score_cols[acronym]
+                            col_cursor += 1
+                            key_offset += 1
+
+                    # score columns
+                    c_col, w_col = score_cols[skey]
                     if c_col:
                         cc = ws.cell(row=write_row, column=c_col, value=correct_count)
                         cc.alignment = CENTER
@@ -436,7 +537,7 @@ class ImageProcessorBlueprint(JDMBlueprint):
                         wc.font      = Font(bold=True, color="9C0006", size=10)
                         wc.fill      = WRONG_SCORE_FILL
 
-                    row_ptr[acronym] = write_row + 1
+                    row_ptr[skey] = write_row + 1
 
             buf = io.BytesIO()
             wb.save(buf)

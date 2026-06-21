@@ -9,8 +9,6 @@ import RequestHandler from "../lib/utilities/request_handler";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
-// ── types ─────────────────────────────────────────────────────────────────────
-
 type ConfigBundle = {
     __version: 1;
     boxes: unknown[];
@@ -26,8 +24,6 @@ type LoadPhase =
     | { status: "error"; message: string };
 
 type SavePhase = "idle" | "saving" | "done" | "error";
-
-// ── save helper ───────────────────────────────────────────────────────────────
 
 async function saveConfigToFile(): Promise<void> {
     const [boxRes, quizRes, cfgRes] = await Promise.all([

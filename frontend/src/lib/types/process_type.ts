@@ -11,7 +11,7 @@ export interface BoxMeta {
     title: string;
     grid_cols: number;
     grid_rows: number;
-    columns: string[]; 
+    columns: string[];
     check_by_row: boolean;
     check_by_col: boolean;
     is_combined: boolean;
@@ -19,6 +19,7 @@ export interface BoxMeta {
     no_double: boolean;
     no_blank: boolean;
     group: string | null;
+    combined_title: string | null;
     is_answerer: boolean;
 }
 
