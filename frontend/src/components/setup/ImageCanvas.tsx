@@ -348,7 +348,9 @@ export default function ImageCanvas({
                     no_double: false,
                     no_blank: false,
                     group: null,
-                    is_answerer: false
+                    is_answerer: false,
+                    combined_title: null
+
                 });
             drawRef.current = null;
             setDrawing(null);
